@@ -157,14 +157,6 @@ func SkipBlockValidationOption() Option {
 	}
 }
 
-// DefaultTriePatchOption loads patchs
-func DefaultTriePatchOption() Option {
-	return func(sf *factory, cfg config.Config) (err error) {
-		sf.ps, err = newPatchStore(cfg.Chain.TrieDBPatchFile)
-		return
-	}
-}
-
 // NewFactory creates a new state factory
 func NewFactory(cfg config.Config, opts ...Option) (Factory, error) {
 	sf := &factory{
@@ -270,32 +262,12 @@ func (sf *factory) newWorkingSet(ctx context.Context, height uint64) (*workingSe
 	span.AddEvent("factory.newWorkingSet")
 	defer span.End()
 
-	g := genesis.MustExtractGenesisContext(ctx)
-	flusher, err := db.NewKVStoreFlusher(
-		sf.dao,
-		batch.NewCachedBatch(),
-		sf.flusherOptions(!g.IsEaster(height))...,
-	)
-	if err != nil {
-		return nil, err
-	}
-	store, err := newFactoryWorkingSetStore(sf.protocolView, flusher)
+	store, err := newFactoryWorkingSetStore(ctx, sf, height)
 	if err != nil {
 		return nil, err
 	}
 	if err := store.Start(ctx); err != nil {
 		return nil, err
-	}
-	for _, p := range sf.ps.Get(height) {
-		if p.Type == _Delete {
-			if err := store.Delete(p.Namespace, p.Key); err != nil {
-				return nil, err
-			}
-		} else {
-			if err := store.Put(p.Namespace, p.Key, p.Value); err != nil {
-				return nil, err
-			}
-		}
 	}
 
 	return newWorkingSet(height, store), nil
@@ -483,13 +455,6 @@ func (sf *factory) PutBlock(ctx context.Context, blk *block.Block) error {
 	}
 
 	if err := ws.Commit(ctx); err != nil {
-		return err
-	}
-	rh, err := sf.dao.Get(ArchiveTrieNamespace, []byte(ArchiveTrieRootKey))
-	if err != nil {
-		return err
-	}
-	if err := sf.twoLayerTrie.SetRootHash(rh); err != nil {
 		return err
 	}
 	sf.currentChainHeight = h
