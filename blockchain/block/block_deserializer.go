@@ -22,7 +22,7 @@ func (bd *Deserializer) FromBlockProto(pbBlock *iotextypes.Block) (*Block, error
 	if err := b.Header.LoadFromBlockHeaderProto(pbBlock.GetHeader()); err != nil {
 		return nil, errors.Wrap(err, "failed to deserialize block header")
 	}
-	if err := b.Body.LoadProto(pbBlock.GetBody()); err != nil {
+	if err := b.Body.LoadProtoWithChainID(pbBlock.GetBody()); err != nil {
 		return nil, errors.Wrap(err, "failed to deserialize block body")
 	}
 	if err := b.ConvertFromBlockFooterPb(pbBlock.GetFooter()); err != nil {
@@ -51,7 +51,7 @@ func (bd *Deserializer) DeserializeBlock(buf []byte) (*Block, error) {
 // FromBodyProto converts protobuf to body
 func (bd *Deserializer) FromBodyProto(pbBody *iotextypes.BlockBody) (*Body, error) {
 	b := Body{}
-	if err := b.LoadProto(pbBody); err != nil {
+	if err := b.LoadProtoWithChainID(pbBody); err != nil {
 		return nil, errors.Wrap(err, "failed to deserialize block body")
 	}
 	return &b, nil

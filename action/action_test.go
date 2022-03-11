@@ -11,8 +11,10 @@ import (
 	"math/big"
 	"testing"
 
+	"github.com/iotexproject/iotex-proto/golang/iotextypes"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/proto"
 
 	"github.com/iotexproject/iotex-core/test/identityset"
 	"github.com/iotexproject/iotex-core/testutil"
@@ -28,15 +30,15 @@ func TestActionProtoAndVerify(t *testing.T) {
 		bd := &EnvelopeBuilder{}
 		elp := bd.SetGasPrice(big.NewInt(10)).
 			SetGasLimit(uint64(100000)).
+			SetChainID(1).
 			SetAction(v).Build()
 
 		selp, err := Sign(elp, identityset.PrivateKey(28))
 		require.NoError(err)
-
 		require.NoError(Verify(selp))
 
 		nselp := &SealedEnvelope{}
-		require.NoError(nselp.LoadProto(selp.Proto()))
+		require.NoError(nselp.LoadProto(selp.Proto(), true))
 
 		selpHash, err := selp.Hash()
 		require.NoError(err)
@@ -134,4 +136,30 @@ func TestAbstractActionSetter(t *testing.T) {
 		ex.SetGasPrice(big.NewInt(0))
 		require.Equal(big.NewInt(0), ex.gasPrice)
 	})
+}
+
+func TestHonorChainID(t *testing.T) {
+	r := require.New(t)
+	txID0, _ := hex.DecodeString("0a10080118a08d062202313062040a023130124104dc4c548c3a478278a6a09ffa8b5c4b384368e49654b35a6961ee8288fc889cdc39e9f8194e41abdbfac248ef9dc3f37b131a36ee2c052d974c21c1d2cd56730b1a4161e219c2c5d5987f8a9efa33e8df0cde9d5541689fff05784cdc24f12e9d9ee8283a5aa720f494b949535b7969c07633dfb68c4ef9359eb16edb9abc6ebfadc801")
+	txID1, _ := hex.DecodeString("0a12080118a08d0622023130280162040a023130124104dc4c548c3a478278a6a09ffa8b5c4b384368e49654b35a6961ee8288fc889cdc39e9f8194e41abdbfac248ef9dc3f37b131a36ee2c052d974c21c1d2cd56730b1a41328c6912fa0e36414c38089c03e2fa8c88bba82ccc4ce5fb8ac4ef9f529dfce249a5b2f93a45b818e7f468a742b4e87be3b8077f95d1b3c49e9165b971848ead01")
+	var selp SealedEnvelope
+	for _, v := range []struct {
+		data    []byte
+		honor   bool
+		chainID uint32
+		err     error
+	}{
+		{txID0, false, 0, nil}, // b/c chainID = 0, no error regardless of honorChainID or not
+		{txID0, true, 0, nil},
+		{txID1, false, 0, ErrInvalidSender}, // chainID = 1, fail to verify tx in case honorChainID = false
+		{txID1, true, 1, nil},
+	} {
+		tx := iotextypes.Action{}
+		r.NoError(proto.Unmarshal(v.data, &tx))
+		r.NoError(selp.LoadProto(&tx, v.honor))
+		r.Equal(v.chainID, selp.Envelope.ChainID())
+		_, err := selp.Hash()
+		r.NoError(err)
+		r.Equal(v.err, Verify(selp))
+	}
 }

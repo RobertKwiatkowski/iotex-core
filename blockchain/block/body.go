@@ -42,7 +42,7 @@ func (b *Body) LoadProto(pbBlock *iotextypes.BlockBody) error {
 	b.Actions = []action.SealedEnvelope{}
 	for _, actPb := range pbBlock.Actions {
 		act := action.SealedEnvelope{}
-		if err := act.LoadProto(actPb); err != nil {
+		if err := act.LoadProto(actPb, false); err != nil {
 			return err
 		}
 		b.Actions = append(b.Actions, act)
@@ -69,4 +69,17 @@ func (b *Body) CalculateTxRoot() (hash.Hash256, error) {
 // CalculateTransferAmount returns the calculated transfer amount in this block.
 func (b *Body) CalculateTransferAmount() *big.Int {
 	return calculateTransferAmount(b.Actions)
+}
+
+// LoadProtoWithChainID loads body from proto
+func (b *Body) LoadProtoWithChainID(pbBlock *iotextypes.BlockBody) error {
+	b.Actions = []action.SealedEnvelope{}
+	for _, actPb := range pbBlock.Actions {
+		act := action.SealedEnvelope{}
+		if err := act.LoadProto(actPb, true); err != nil {
+			return err
+		}
+		b.Actions = append(b.Actions, act)
+	}
+	return nil
 }

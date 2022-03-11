@@ -138,12 +138,12 @@ func TestSealedEnvelope_Proto(t *testing.T) {
 	} {
 		se.encoding = v.encoding
 		se.signature = v.sig
-		req.Contains(se2.LoadProto(se.Proto()).Error(), v.err)
+		req.Contains(se2.LoadProto(se.Proto(), true).Error(), v.err)
 	}
 
 	se.encoding = 1
 	se.signature = validSig
-	req.NoError(se.LoadProto(se.Proto()))
+	req.NoError(se.LoadProto(se.Proto(), true))
 	tsf2, ok := se.Envelope.Action().(*Transfer)
 	req.True(ok)
 	req.Equal(tsf, tsf2)

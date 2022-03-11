@@ -81,7 +81,7 @@ func (sealed *SealedEnvelope) Proto() *iotextypes.Action {
 }
 
 // LoadProto loads from proto scheme.
-func (sealed *SealedEnvelope) LoadProto(pbAct *iotextypes.Action) error {
+func (sealed *SealedEnvelope) LoadProto(pbAct *iotextypes.Action, honorChainID bool) error {
 	if pbAct == nil {
 		return ErrEmptyActionPool
 	}
@@ -94,7 +94,7 @@ func (sealed *SealedEnvelope) LoadProto(pbAct *iotextypes.Action) error {
 	}
 
 	var elp Envelope = &envelope{}
-	if err := elp.LoadProto(pbAct.GetCore()); err != nil {
+	if err := elp.LoadProto(pbAct.GetCore(), honorChainID); err != nil {
 		return err
 	}
 	// populate pubkey and signature

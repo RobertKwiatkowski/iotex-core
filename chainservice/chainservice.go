@@ -38,6 +38,7 @@ import (
 	"github.com/iotexproject/iotex-core/blockchain"
 	"github.com/iotexproject/iotex-core/blockchain/block"
 	"github.com/iotexproject/iotex-core/blockchain/blockdao"
+	"github.com/iotexproject/iotex-core/blockchain/genesis"
 	"github.com/iotexproject/iotex-core/blockindex"
 	"github.com/iotexproject/iotex-core/blocksync"
 	"github.com/iotexproject/iotex-core/config"
@@ -505,12 +506,17 @@ func (cs *ChainService) ReportFullness(_ context.Context, _ iotexrpc.MessageType
 
 // HandleAction handles incoming action request.
 func (cs *ChainService) HandleAction(ctx context.Context, actPb *iotextypes.Action) error {
+	bcCtx, err := cs.chain.Context(ctx)
+	if err != nil {
+		return err
+	}
+	g := genesis.MustExtractGenesisContext(bcCtx)
 	var act action.SealedEnvelope
-	if err := act.LoadProto(actPb); err != nil {
+	if err := act.LoadProto(actPb, g.IsMidway(cs.chain.TipHeight())); err != nil {
 		return err
 	}
 	ctx = protocol.WithRegistry(ctx, cs.registry)
-	err := cs.actpool.Add(ctx, act)
+	err = cs.actpool.Add(ctx, act)
 	if err != nil {
 		log.L().Debug(err.Error())
 	}

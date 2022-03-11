@@ -266,7 +266,10 @@ func SendAction(elp action.Envelope, signer string) error {
 	if err != nil {
 		return output.NewError(0, "failed to get chain meta", err)
 	}
-	elp.SetChainID(chainMeta.GetChainID())
+	var isMiday bool
+	if isMiday {
+		elp.SetChainID(chainMeta.GetChainID())
+	}
 
 	if util.AliasIsHdwalletKey(signer) {
 		addr := prvKey.PublicKey().Address()

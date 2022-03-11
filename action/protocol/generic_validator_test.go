@@ -79,7 +79,7 @@ func TestActionProtoAndGenericValidator(t *testing.T) {
 		selp, err := action.Sign(elp, identityset.PrivateKey(28))
 		require.NoError(err)
 		nselp := action.SealedEnvelope{}
-		require.NoError(nselp.LoadProto(selp.Proto()))
+		require.NoError(nselp.LoadProto(selp.Proto(), true))
 		require.NoError(valid.Validate(ctx, nselp))
 	})
 	t.Run("Gas limit low", func(t *testing.T) {
@@ -92,7 +92,7 @@ func TestActionProtoAndGenericValidator(t *testing.T) {
 		selp, err := action.Sign(elp, identityset.PrivateKey(28))
 		require.NoError(err)
 		nselp := action.SealedEnvelope{}
-		require.NoError(nselp.LoadProto(selp.Proto()))
+		require.NoError(nselp.LoadProto(selp.Proto(), true))
 		err = valid.Validate(ctx, nselp)
 		require.Error(err)
 		require.Contains(err.Error(), action.ErrIntrinsicGas.Error())
@@ -107,7 +107,7 @@ func TestActionProtoAndGenericValidator(t *testing.T) {
 		selp, err := action.Sign(elp, identityset.PrivateKey(27))
 		require.NoError(err)
 		nselp := action.SealedEnvelope{}
-		require.NoError(nselp.LoadProto(selp.Proto()))
+		require.NoError(nselp.LoadProto(selp.Proto(), true))
 		err = valid.Validate(ctx, nselp)
 		require.Error(err)
 		require.Contains(err.Error(), "invalid state of account")
@@ -123,7 +123,7 @@ func TestActionProtoAndGenericValidator(t *testing.T) {
 		selp, err := action.Sign(elp, identityset.PrivateKey(28))
 		require.NoError(err)
 		nselp := action.SealedEnvelope{}
-		require.NoError(nselp.LoadProto(selp.Proto()))
+		require.NoError(nselp.LoadProto(selp.Proto(), true))
 		err = valid.Validate(ctx, nselp)
 		require.Error(err)
 		require.Equal(action.ErrNonceTooLow, errors.Cause(err))

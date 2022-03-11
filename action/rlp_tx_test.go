@@ -312,7 +312,7 @@ func TestRlpDecodeVerify(t *testing.T) {
 		// receive from API
 		proto.Unmarshal(bs, pb)
 		selp := SealedEnvelope{}
-		require.NoError(selp.LoadProto(pb))
+		require.NoError(selp.LoadProto(pb, true))
 		rlpTx, err := actionToRLP(selp.Action())
 		require.NoError(err)
 
